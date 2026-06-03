@@ -1,7 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { BarChart3, LogOut, Play, Search, TrendingUp, Zap } from 'lucide-react'
-import { supabase } from '@/lib/supabase'
+import { supabase } from '../../lib/supabase'
 
 type Signal={coin:string,pair:string,signal:string,timeframe:string,score:number,rsi:string,macd:string,adx:string,atr:string,status:string}
 export default function Dashboard(){
