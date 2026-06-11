@@ -146,7 +146,19 @@ export default function Dashboard() {
                       <td className={s.score >= 80 ? 'greenText' : s.score >= 65 ? 'yellowText' : ''}>
   {s.score}%
 </td>
-
+<td>
+  <span
+    className={
+      s.confirmations >= 5
+        ? 'greenText'
+        : s.confirmations >= 3
+        ? 'yellowText'
+        : 'redText'
+    }
+  >
+    {s.confirmations}/7
+  </span>
+</td>
 <td className={Number(s.rsi) >= 55 ? 'redText' : Number(s.rsi) <= 45 ? 'greenText' : ''}>
   {s.rsi}
 </td>
