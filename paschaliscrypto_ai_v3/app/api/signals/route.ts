@@ -232,7 +232,7 @@ return {
   reasons,
   confirmations
 }
-  return { signal, score, reasons }
+
 }
 
 export async function GET() {
@@ -264,8 +264,9 @@ export async function GET() {
       const candleMove = lastCandleMove(prices)
 
       let signal = 'NEUTRAL'
-      let score = 50
-      let reasons: string[] = []
+let score = 50
+let reasons: string[] = []
+let confirmations = 0
 
       if (
         rsiValue !== null &&
@@ -286,9 +287,9 @@ export async function GET() {
         })
 
         signal = result.signal
-        score = result.score
-        reasons = result.reasons
-        const confirmations = result.confirmations
+score = result.score
+reasons = result.reasons
+confirmations = result.confirmations
       }
 
       return {
