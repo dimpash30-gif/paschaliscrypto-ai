@@ -141,10 +141,21 @@ export default function Dashboard() {
                       <td className={Number(s.change24h) >= 0 ? 'greenText' : 'redText'}>
                         {s.change24h}%
                       </td>
-                      <td>{s.score}%</td>
-                      <td>{s.rsi}</td>
-                      <td>{s.stochK}</td>
-                      <td>{s.stochD}</td>
+                      <td className={s.score >= 80 ? 'greenText' : s.score >= 65 ? 'yellowText' : ''}>
+  {s.score}%
+</td>
+
+<td className={Number(s.rsi) >= 55 ? 'redText' : Number(s.rsi) <= 45 ? 'greenText' : ''}>
+  {s.rsi}
+</td>
+
+<td className={Number(s.stochK) > Number(s.stochD) ? 'greenText' : 'redText'}>
+  {s.stochK}
+</td>
+
+<td className={Number(s.stochK) > Number(s.stochD) ? 'greenText' : 'redText'}>
+  {s.stochD}
+</td>
                       <td>{s.macd}</td>
                       <td>{s.atr}%</td>
                       <td>{s.lastCandle}%</td>
