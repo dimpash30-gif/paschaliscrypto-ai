@@ -219,7 +219,19 @@ function analyzeSignal(params: {
     score = Math.min(100, shortScore)
     reasons = shortReasons
   }
+const confirmations =
+  signal === 'LONG'
+    ? longReasons.length
+    : signal === 'SHORT'
+    ? shortReasons.length
+    : 0
 
+return {
+  signal,
+  score,
+  reasons,
+  confirmations
+}
   return { signal, score, reasons }
 }
 
@@ -276,6 +288,7 @@ export async function GET() {
         signal = result.signal
         score = result.score
         reasons = result.reasons
+        const confirmations = result.confirmations
       }
 
       return {
@@ -293,7 +306,8 @@ export async function GET() {
         atr: atr !== null ? atr.toFixed(2) : '-',
         lastCandle: candleMove !== 999 ? candleMove.toFixed(2) : '-',
         status: 'LIVE RSI + STOCH + MACD + ATR',
-        reasons
+confirmations,
+reasons
       }
     })
        signals.sort((a: any, b: any) => {
