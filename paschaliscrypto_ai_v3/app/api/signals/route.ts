@@ -296,7 +296,19 @@ export async function GET() {
         reasons
       }
     })
+       signals.sort((a: any, b: any) => {
+  const order: any = {
+    LONG: 1,
+    SHORT: 2,
+    NEUTRAL: 3
+  }
 
+  if (order[a.signal] !== order[b.signal]) {
+    return order[a.signal] - order[b.signal]
+  }
+
+  return b.score - a.score
+})
     return NextResponse.json({ signals })
   } catch (error: any) {
     return NextResponse.json(
