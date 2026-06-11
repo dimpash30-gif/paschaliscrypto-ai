@@ -9,8 +9,9 @@ function ema(values: number[], period: number) {
   return out
 }
 
-function rsi(values: number[], period = 14) {
-  if (values.length <= period) return null
+function rsiSeries(values: number[], period = 14) {
+  const out: number[] = Array(values.length).fill(NaN)
+  if (values.length <= period) return out
 
   let gains = 0
   let losses = 0
@@ -24,17 +25,65 @@ function rsi(values: number[], period = 14) {
   let avgGain = gains / period
   let avgLoss = losses / period
 
+  out[period] = avgLoss === 0 ? 100 : 100 - 100 / (1 + avgGain / avgLoss)
+
   for (let i = period + 1; i < values.length; i++) {
     const diff = values[i] - values[i - 1]
     const gain = diff > 0 ? diff : 0
     const loss = diff < 0 ? -diff : 0
+
     avgGain = (avgGain * (period - 1) + gain) / period
     avgLoss = (avgLoss * (period - 1) + loss) / period
+
+    out[i] = avgLoss === 0 ? 100 : 100 - 100 / (1 + avgGain / avgLoss)
   }
 
-  if (avgLoss === 0) return 100
-  const rs = avgGain / avgLoss
-  return 100 - 100 / (1 + rs)
+  return out
+}
+
+function lastValid(arr: number[]) {
+  for (let i = arr.length - 1; i >= 0; i--) {
+    if (!Number.isNaN(arr[i]) && Number.isFinite(arr[i])) return arr[i]
+  }
+  return null
+}
+
+function stochRsi(values: number[], rsiPeriod = 14, stochPeriod = 14, kPeriod = 3, dPeriod = 3) {
+  const rsis = rsiSeries(values, rsiPeriod)
+  const stoch: number[] = Array(values.length).fill(NaN)
+
+  for (let i = 0; i < values.length; i++) {
+    if (i < rsiPeriod + stochPeriod) continue
+
+    const slice = rsis.slice(i - stochPeriod + 1, i + 1).filter(v => !Number.isNaN(v))
+    if (slice.length < stochPeriod) continue
+
+    const min = Math.min(...slice)
+    const max = Math.max(...slice)
+
+    stoch[i] = max === min ? 50 : ((rsis[i] - min) / (max - min)) * 100
+  }
+
+  const k = simpleMA(stoch, kPeriod)
+  const d = simpleMA(k, dPeriod)
+
+  return {
+    k: lastValid(k),
+    d: lastValid(d)
+  }
+}
+
+function simpleMA(values: number[], period: number) {
+  const out: number[] = Array(values.length).fill(NaN)
+
+  for (let i = period - 1; i < values.length; i++) {
+    const slice = values.slice(i - period + 1, i + 1).filter(v => !Number.isNaN(v))
+    if (slice.length === period) {
+      out[i] = slice.reduce((a, b) => a + b, 0) / period
+    }
+  }
+
+  return out
 }
 
 function macd(values: number[]) {
@@ -44,6 +93,7 @@ function macd(values: number[]) {
   const ema26 = ema(values, 26)
   const macdLine = values.map((_, i) => ema12[i] - ema26[i])
   const signalLine = ema(macdLine, 9)
+
   const hist = macdLine[macdLine.length - 1] - signalLine[signalLine.length - 1]
   const prevHist = macdLine[macdLine.length - 2] - signalLine[signalLine.length - 2]
 
@@ -55,39 +105,122 @@ function macd(values: number[]) {
   }
 }
 
-function analyzeSignal(rsiValue: number, macdData: any, change24h: number) {
+function atrPercentApprox(values: number[], period = 14) {
+  if (values.length <= period + 1) return null
+
+  const trs: number[] = []
+
+  for (let i = values.length - period; i < values.length; i++) {
+    const prev = values[i - 1]
+    const curr = values[i]
+    trs.push(Math.abs(curr - prev))
+  }
+
+  const atr = trs.reduce((a, b) => a + b, 0) / trs.length
+  const last = values[values.length - 1]
+
+  return (atr / last) * 100
+}
+
+function lastCandleMove(values: number[]) {
+  if (values.length < 2) return 999
+
+  const prev = values[values.length - 2]
+  const last = values[values.length - 1]
+
+  if (prev === 0) return 999
+
+  return Math.abs((last - prev) / prev) * 100
+}
+
+function analyzeSignal(params: {
+  rsi: number
+  stochK: number
+  stochD: number
+  macdHist: number
+  macdImproving: boolean
+  atrPercent: number
+  candleMove: number
+  change24h: number
+}) {
   let longScore = 0
   let shortScore = 0
+  const longReasons: string[] = []
+  const shortReasons: string[] = []
 
-  if (rsiValue >= 35 && rsiValue <= 65) {
+  const { rsi, stochK, stochD, macdHist, macdImproving, atrPercent, candleMove, change24h } = params
+
+  if (atrPercent >= 0.2) {
     longScore += 10
     shortScore += 10
   }
 
-  if (rsiValue < 45) longScore += 15
-  if (rsiValue > 55) shortScore += 15
+  if (candleMove >= 0.05 && candleMove <= 2.2) {
+    longScore += 10
+    shortScore += 10
+  }
 
-  if (macdData.hist > 0) longScore += 25
-  if (macdData.hist < 0) shortScore += 25
+  if (35 <= rsi && rsi <= 65) {
+    longScore += 10
+    shortScore += 10
+  }
 
-  if (macdData.improving) longScore += 20
-  if (!macdData.improving) shortScore += 20
+  if (rsi < 45) {
+    longScore += 10
+    longReasons.push('RSI χαμηλά υπέρ LONG')
+  }
+
+  if (rsi > 55) {
+    shortScore += 10
+    shortReasons.push('RSI ψηλά υπέρ SHORT')
+  }
+
+  if (stochK > stochD && stochK < 80) {
+    longScore += 20
+    longReasons.push('Stoch RSI bullish')
+  }
+
+  if (stochK < stochD && stochK > 10) {
+    shortScore += 20
+    shortReasons.push('Stoch RSI bearish')
+  }
+
+  if (macdHist > 0) {
+    longScore += 20
+    longReasons.push('MACD bullish')
+  }
+
+  if (macdHist < 0) {
+    shortScore += 20
+    shortReasons.push('MACD bearish')
+  }
+
+  if (macdImproving) {
+    longScore += 15
+    longReasons.push('MACD improving')
+  } else {
+    shortScore += 15
+    shortReasons.push('MACD weakening')
+  }
 
   if (change24h > 0) longScore += 10
   if (change24h < 0) shortScore += 10
 
   let signal = 'NEUTRAL'
   let score = 50
+  let reasons: string[] = []
 
-  if (longScore >= 45 && longScore > shortScore) {
+  if (longScore >= 65 && longScore > shortScore) {
     signal = 'LONG'
-    score = Math.min(100, 50 + longScore)
-  } else if (shortScore >= 45 && shortScore > longScore) {
+    score = Math.min(100, longScore)
+    reasons = longReasons
+  } else if (shortScore >= 65 && shortScore > longScore) {
     signal = 'SHORT'
-    score = Math.min(100, 50 + shortScore)
+    score = Math.min(100, shortScore)
+    reasons = shortReasons
   }
 
-  return { signal, score }
+  return { signal, score, reasons }
 }
 
 export async function GET() {
@@ -111,16 +244,38 @@ export async function GET() {
       const price = Number(item.current_price || 0)
       const change24h = Number(item.price_change_percentage_24h || 0)
 
-      const rsiValue = rsi(prices)
+      const rsiValues = rsiSeries(prices)
+      const rsiValue = lastValid(rsiValues)
+      const stoch = stochRsi(prices)
       const macdData = macd(prices)
+      const atr = atrPercentApprox(prices)
+      const candleMove = lastCandleMove(prices)
 
       let signal = 'NEUTRAL'
       let score = 50
+      let reasons: string[] = []
 
-      if (rsiValue !== null && macdData !== null) {
-        const result = analyzeSignal(rsiValue, macdData, change24h)
+      if (
+        rsiValue !== null &&
+        stoch.k !== null &&
+        stoch.d !== null &&
+        macdData !== null &&
+        atr !== null
+      ) {
+        const result = analyzeSignal({
+          rsi: rsiValue,
+          stochK: stoch.k,
+          stochD: stoch.d,
+          macdHist: macdData.hist,
+          macdImproving: macdData.improving,
+          atrPercent: atr,
+          candleMove,
+          change24h
+        })
+
         signal = result.signal
         score = result.score
+        reasons = result.reasons
       }
 
       return {
@@ -132,8 +287,13 @@ export async function GET() {
         change24h: change24h.toFixed(2),
         score,
         rsi: rsiValue !== null ? rsiValue.toFixed(2) : '-',
+        stochK: stoch.k !== null ? stoch.k.toFixed(2) : '-',
+        stochD: stoch.d !== null ? stoch.d.toFixed(2) : '-',
         macd: macdData ? `${macdData.direction} ${macdData.hist.toFixed(6)}` : '-',
-        status: 'LIVE RSI + MACD'
+        atr: atr !== null ? atr.toFixed(2) : '-',
+        lastCandle: candleMove !== 999 ? candleMove.toFixed(2) : '-',
+        status: 'LIVE RSI + STOCH + MACD + ATR',
+        reasons
       }
     })
 
