@@ -13,8 +13,13 @@ type Signal = {
   price: number
   change24h: string
   rsi: string
+  stochK: string
+  stochD: string
   macd: string
+  atr: string
+  lastCandle: string
   status: string
+  reasons: string[]
 }
 
 type Market = Signal
@@ -34,7 +39,7 @@ export default function Dashboard() {
 
   async function load() {
     setLoading(true)
-    setMsg('Γίνεται αναζήτηση 50 κρυπτονομισμάτων...')
+    setMsg('Γίνεται ανάλυση 50 κρυπτονομισμάτων...')
 
     try {
       const r = await fetch('/api/signals', { cache: 'no-store' })
@@ -46,7 +51,7 @@ export default function Dashboard() {
 
       setSignals(rows)
       setMarket(rows)
-      setMsg(`Βρέθηκαν ${rows.length} κρυπτονομίσματα με ζωντανά δεδομένα CoinGecko.`)
+      setMsg(`Αναλύθηκαν ${rows.length} κρυπτονομίσματα με RSI, Stoch RSI, MACD και ATR.`)
     } catch (e: any) {
       setMsg(e.message || 'Δεν ολοκληρώθηκε η αναζήτηση.')
     } finally {
@@ -71,8 +76,9 @@ export default function Dashboard() {
     <>
       <header className="top">
         <div className="brand">
-          <TrendingUp /> PaschalisCrypto AI <span className="tag">Live Market Beta</span>
+          <TrendingUp /> PaschalisCrypto AI <span className="tag">Scanner v5</span>
         </div>
+
         <button onClick={logout} className="btn">
           <LogOut size={16} /> Έξοδος
         </button>
@@ -96,7 +102,7 @@ export default function Dashboard() {
             <h2><Zap /> Trading Signals</h2>
 
             <button onClick={load} disabled={loading} className="btn primary">
-              <Play size={16} /> {loading ? 'Αναζήτηση...' : 'Αναζήτηση 50 κρυπτονομισμάτων'}
+              <Play size={16} /> {loading ? 'Ανάλυση...' : 'Ανάλυση 50 κρυπτονομισμάτων'}
             </button>
 
             <p className="notice" style={{ marginTop: 14 }}>{msg}</p>
@@ -112,7 +118,11 @@ export default function Dashboard() {
                     <th>24h</th>
                     <th>Score</th>
                     <th>RSI</th>
+                    <th>Stoch K</th>
+                    <th>Stoch D</th>
                     <th>MACD</th>
+                    <th>ATR %</th>
+                    <th>Last Candle</th>
                     <th>Status</th>
                   </tr>
                 </thead>
@@ -133,7 +143,11 @@ export default function Dashboard() {
                       </td>
                       <td>{s.score}%</td>
                       <td>{s.rsi}</td>
+                      <td>{s.stochK}</td>
+                      <td>{s.stochD}</td>
                       <td>{s.macd}</td>
+                      <td>{s.atr}%</td>
+                      <td>{s.lastCandle}%</td>
                       <td>{s.status}</td>
                     </tr>
                   ))}
@@ -154,6 +168,8 @@ export default function Dashboard() {
                     <th>Coin</th>
                     <th>Price</th>
                     <th>24h</th>
+                    <th>RSI</th>
+                    <th>MACD</th>
                     <th>Source</th>
                   </tr>
                 </thead>
@@ -166,6 +182,8 @@ export default function Dashboard() {
                       <td className={Number(s.change24h) >= 0 ? 'greenText' : 'redText'}>
                         {s.change24h}%
                       </td>
+                      <td>{s.rsi}</td>
+                      <td>{s.macd}</td>
                       <td>{s.status}</td>
                     </tr>
                   ))}
@@ -215,12 +233,15 @@ export default function Dashboard() {
         {tab === 'About' && (
           <section className="card">
             <h2>About PaschalisCrypto AI</h2>
+
             <p>
-              Η έκδοση αυτή κάνει αναζήτηση 50 κρυπτονομισμάτων και εμφανίζει ζωντανές τιμές και μεταβολές από CoinGecko.
+              Η έκδοση v5 αναλύει 50 κρυπτονομίσματα με RSI, Stoch RSI, MACD, ATR% και Last Candle Move.
             </p>
+
             <p>
-              Το επόμενο βήμα είναι να προσθέσουμε πραγματικούς δείκτες RSI, MACD, ADX και ATR όπως στον Python scanner σου.
+              Αυτό είναι το πρώτο μεγάλο βήμα για να περάσουμε στο site τη λογική του Pydroid scanner σου.
             </p>
+
             <div className="notice">
               Τα σήματα είναι εκπαιδευτικά/βοηθητικά και όχι οικονομική συμβουλή.
             </div>
