@@ -118,6 +118,7 @@ export default function Dashboard() {
                     <th>Price</th>
                     <th>24h</th>
                     <th>Score</th>
+                    <th>Conf.</th>
                     <th>RSI</th>
                     <th>Stoch K</th>
                     <th>Stoch D</th>
