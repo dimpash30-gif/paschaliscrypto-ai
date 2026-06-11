@@ -6,14 +6,26 @@ export default function Home() {
     <>
       <header className="top">
         <div className="brand"><TrendingUp/> PaschalisCrypto AI <span className="tag">Public Beta</span></div>
-        <div><Link className="btn" href="/login">Σύνδεση</Link> <Link className="btn primary" href="/register">Εγγραφή</Link></div>
+       <div>
+  <Link className="btn" href="/login">Σύνδεση</Link>
+  <Link className="btn primary" href="/register">Εγγραφή</Link>
+  <Link className="btn" href="/dashboard">Dashboard</Link>
+</div> 
       </header>
       <main className="wrap">
         <section className="hero">
           <div>
             <h1>Έξυπνη ανάλυση crypto σημάτων σε μαύρο επαγγελματικό dashboard.</h1>
             <p>Εγγραφή με email, αναζήτηση κρυπτονομισμάτων, LONG/SHORT σήματα, στατιστικά και μελλοντική σύνδεση με Telegram alerts.</p>
-            <Link className="btn primary" href="/register">Ξεκίνα δωρεάν</Link>
+          <div style={{display:'flex',gap:'10px',marginTop:'20px'}}>
+  <Link className="btn primary" href="/register">
+    Ξεκίνα δωρεάν
+  </Link>
+
+  <Link className="btn" href="/dashboard">
+    Άνοιγμα Dashboard
+  </Link>
+</div>  
           </div>
           <div className="card">
             <h2>Τι περιλαμβάνει</h2>
