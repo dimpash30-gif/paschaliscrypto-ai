@@ -20,6 +20,7 @@ type Signal = {
   lastCandle: string
   status: string
   reasons: string[]
+  confirmations:number
 }
 
 type Market = Signal
